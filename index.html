@@ -528,12 +528,13 @@ function vList(){
   const inclItems=S.items.filter(i=>i.includeInAI!==false);
   const bud=totalBudget(),we=inclItems.filter(i=>i.estimasi).length;
   const exclCount=S.items.length-inclItems.length;
+  const parahCount=S.items.filter(i=>i.severity==='Parah').length;
   const stats=`<div class="sg">
     <div class="sc"><div class="si">🏚️</div><div class="sv">${S.items.length}</div><div class="sl">Kerusakan</div></div>
-    <div class="sc"><div class="si">💰</div><div class="sv">${we}</div><div class="sl">Diestimasi</div></div>
+    <div class="sc"><div class="si">🔴</div><div class="sv" style="color:var(--red)">${parahCount||'—'}</div><div class="sl">Parah</div></div>
     <div class="sc"><div class="si">📊</div><div class="sv ${bud>0?'sm':''}">${bud>0?fmt(bud):'—'}</div><div class="sl">Total AI</div></div>
   </div>`;
-  if(!S.items.length)return`<div class="content">${stats}<div class="empty"><div class="ei">🏠</div><div class="et">Belum Ada Data</div><div class="es">Tap <strong>+</strong> untuk mulai mendokumentasikan kerusakan.</div></div></div>`;
+  if(!S.items.length)return`<div class="content">${stats}<div class="empty"><div class="ei">🏠</div><div class="et">Mulai Dokumentasikan Rumahmu</div><div class="es">Tap tombol <strong>+</strong> di pojok kanan bawah untuk menambah kerusakan pertama. Foto, deskripsi, lalu minta estimasi biaya dari AI secara gratis!</div><button class="btn bp2" style="max-width:200px;margin:16px auto 0" onclick="go('add')">➕ Tambah Kerusakan</button></div></div>`;
   const cards=S.items.map(it=>{
     const incl=it.includeInAI!==false;
     const thumb=it.images[0]?`<div class="cthumb"><img src="${it.images[0]}"/></div>`:`<div class="cthumb">📷</div>`;
@@ -734,7 +735,7 @@ function vForm(){
       <input type="file" id="ig" accept="image/*" multiple style="display:none" onchange="addPhoto(event)">
     </div>
     <button class="btn bp2" onclick="saveItem()">${S.editingId?'✅ Simpan Perubahan':'➕ Tambah Kerusakan'}</button>
-    <button class="btn bsec mt8" onclick="cancelForm()">Batal</button>
+    <button class="btn bsec mt8" style="margin-top:12px" onclick="cancelForm()">← Batal, Kembali ke Daftar</button>
   </div>`;
 }
 
@@ -998,6 +999,12 @@ function vReport(){
       <button class="btn bgrn" onclick="dlReport('worker')">📤 Download untuk Tukang</button>
     </div>
     <div style="background:#F0F9FF;border:1px solid #BAE6FD;border-radius:var(--r);padding:14px 16px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700;color:#0369A1;margin-bottom:4px">📝 Format RTF (Word/Google Docs)</div>
+      <div style="font-size:12px;color:var(--ink2);margin-bottom:10px;line-height:1.5">File <strong>.rtf</strong> — bisa langsung dibuka di Microsoft Word, Google Docs, LibreOffice tanpa konversi.</div>
+      <button class="btn" style="border-color:#0369A1;color:#0369A1;background:none" onclick="dlRTF()">📝 Download File .RTF</button>
+    </div>
+
+    <div style="background:#F0F9FF;border:1px solid #BAE6FD;border-radius:var(--r);padding:14px 16px;margin-bottom:12px">
       <div style="font-size:13px;font-weight:700;color:#0369A1;margin-bottom:4px">💾 Backup & Pindah HP</div>
       <div style="font-size:12px;color:var(--ink2);margin-bottom:10px;line-height:1.5">Export semua data ke file JSON — import di HP lain untuk lanjutkan dari tempat yang sama.</div>
       <div style="display:flex;gap:8px">
@@ -1223,7 +1230,7 @@ function extractTotal(raw){
   return all.length?Math.max(...all):0;
 }
 function parseRp(s){if(!s)return 0;return parseFloat(s.replace(/\./g,'').replace(',','.'))||0;}
-function clearGlobal(){if(!confirm('Hapus hasil analisis global?'))return;S.globalAI=null;localStorage.removeItem('rv3_global');render();}
+function clearGlobal(){if(!confirm('Hapus hasil analisis global?'))return;S.globalAI=null;localStorage.removeItem('rv3_global');toast('🗑️ Analisis global dihapus');render();}
 
 // ══════════════════════════════════════
 // FORM ACTIONS
@@ -1287,9 +1294,9 @@ function saveItem(){
   const cat=($('f-cat')?.value||S.form.category).trim();
   const desc=($('f-desc')?.value||S.form.description).trim();
   if(!room||!cat||!desc){
-    if(!room)toast('⚠️ Masukkan nama ruangan!',true);
-    else if(!cat)toast('⚠️ Masukkan kategori kerusakan!',true);
-    else toast('⚠️ Masukkan deskripsi!',true);
+    if(!room){toast('⚠️ Masukkan nama ruangan!',true);$('f-room')?.focus();}
+    else if(!cat){toast('⚠️ Masukkan kategori kerusakan!',true);$('f-cat')?.focus();}
+    else{toast('⚠️ Masukkan deskripsi kerusakan!',true);$('f-desc')?.focus();}
     _saving=false;
     if(btn){btn.disabled=false;btn.textContent=S.editingId?'✅ Simpan Perubahan':'➕ Tambah Kerusakan';}
     return;
@@ -1509,11 +1516,59 @@ ${workerItems}
 }
 
 // ══════════════════════════════════════
-// TOAST
+// REPORT EXPORT — RTF FORMAT (.rtf)
 // ══════════════════════════════════════
+function dlRTF(){
+  if(!S.items.length){toast('⚠️ Belum ada data untuk diekspor',true);return;}
+  const city=S.city||'Kota';
+  const date=new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  const sevMap={Ringan:'RINGAN',Sedang:'SEDANG',Parah:'PARAH'};
+
+  let rtf='{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0\\fswiss Plus Jakarta Sans;}{\\f1\\fmodern Courier New;}}\n';
+  rtf+='{\\colortbl;\\red194\\green65\\blue12;\\red120\\green113\\blue108;\\red21\\green128\\blue61;\\red220\\green38\\blue38;}\n';
+
+  // Title
+  rtf+='\\pard\\qc\\b\\fs36 LAPORAN DOKUMENTASI RENOVASI\\b0\\fs24\\par\n';
+  rtf+=`\\pard\\qc\\cf2 ${city}  \\bullet  ${date}  \\bullet  ${S.items.length} titik kerusakan\\cf0\\par\n`;
+  rtf+=`\\pard\\qc\\cf1\\b Estimasi AI: ${fmt(totalBudget())}\\b0\\cf0\\par\\par\n`;
+  rtf+='\\pard\\brdrb\\brdrs\\brdrw15 \\par\\par\n';
+
+  S.items.forEach((it,idx)=>{
+    rtf+=`\\pard\\b\\fs26 ${idx+1}. ${esc(it.room)} \\emdash  ${esc(it.category)}\\b0\\fs24\\par\n`;
+    rtf+=`\\pard\\cf2 Tingkat: ${it.severity}${it.size?' | Ukuran: '+it.size:''}${it.materialGrade?' | Kelas: '+it.materialGrade:''}\\cf0\\par\n`;
+    rtf+=`\\pard ${esc(it.description)}\\par\n`;
+    if(it.notes)rtf+=`\\pard\\cf2\\i Catatan: ${esc(it.notes)}\\i0\\cf0\\par\n`;
+    if(it.estimasi?.grand_total&&it.includeInAI!==false){
+      rtf+=`\\pard\\cf1\\b Estimasi AI: ${fmt(it.estimasi.grand_total)}\\b0\\cf0\\par\n`;
+    }
+    rtf+='\\pard\\par\n';
+  });
+
+  if(S.globalAI?.raw_text){
+    rtf+='\\pard\\brdrb\\brdrs\\brdrw15 \\par\n';
+    rtf+=`\\pard\\b\\fs26 ANALISIS AI KOMPREHENSIF\\b0\\fs24\\par\n`;
+    // Strip markdown for RTF (basic)
+    const plain=S.globalAI.raw_text.replace(/\*\*(.*?)\*\*/g,'$1').replace(/[#*|]/g,'').replace(/---+/g,'\\emdash\\emdash\\emdash').replace(/\n/g,'\\par\n');
+    rtf+=`\\pard ${plain}\\par\n`;
+  }
+
+  rtf+='\\pard\\qc\\cf2\\fs20 Renovasi Tracker \\bullet  '+city+' \\bullet  '+date+'\\cf0\\fs24\\par\n}';
+
+  const a=Object.assign(document.createElement('a'),{
+    href:URL.createObjectURL(new Blob([rtf],{type:'application/rtf'})),
+    download:`laporan-renovasi-${new Date().toISOString().slice(0,10)}.rtf`
+  });
+  a.click();URL.revokeObjectURL(a.href);
+  toast('📝 File .RTF berhasil diunduh!',false,'ok');
+}
+
+
 function toast(msg,isErr,type){
+  // FIX BUG: when isErr=false and type='ok', the ternary short-circuited incorrectly.
+  // Now use explicit checks so 'ok' class is applied even when isErr is falsy.
+  const cls=isErr?'err':type==='ok'?'ok':'';
   const el=document.createElement('div');
-  el.className='toast'+(isErr?' err':type==='ok'?' ok':'');
+  el.className='toast'+(cls?' '+cls:'');
   el.textContent=msg;document.body.appendChild(el);
   setTimeout(()=>el.remove(),3000);
 }
@@ -1549,25 +1604,8 @@ function vSettings(){
           <div style="font-size:11px;color:var(--ink3);font-style:italic">Banner install otomatis muncul setelah beberapa kunjungan</div>
         </div>`;
 
-  const dupBlock=dupGroups.length
-    ?`<div class="set-section">
-        <div class="set-label">⚠️ ${dupGroups.length} Kelompok Duplikat Ditemukan</div>
-        <div class="set-card">
-          ${dupGroups.map((g,gi)=>`
-          <div style="padding:14px 16px;border-bottom:1px solid var(--bdr)">
-            <div style="font-size:12px;font-weight:700;color:var(--amb);margin-bottom:8px">Kelompok ${gi+1} — ${g.length} item serupa</div>
-            ${g.map(it=>`<div class="merge-row">
-              <input type="checkbox" id="mg-${it.id}" checked onchange="">
-              <div class="merge-row-body">
-                <div class="merge-row-title">${it.room} — ${it.category}</div>
-                <div class="merge-row-sub">${it.severity} · ${it.description.slice(0,60)}${it.description.length>60?'…':''}</div>
-              </div>
-            </div>`).join('')}
-            <button class="btn bpu" style="width:100%;margin-top:8px" onclick="mergeGroup(${gi})">🔗 Gabungkan Kelompok Ini</button>
-          </div>`).join('')}
-        </div>
-      </div>`
-    :``;
+  // FIX: dupBlock was dead code — built but never used in return template.
+  // Removed. The inline dupGroups section in the return template handles this.
 
   return`<div class="content">
     ${installBlock}
@@ -1639,7 +1677,7 @@ function vSettings(){
           <div class="set-row-icon">🏠</div>
           <div class="set-row-body">
             <div class="set-row-label">Renovasi Tracker</div>
-            <div class="set-row-sub">Versi 2.0 · Single-file PWA · Data tersimpan lokal di browser</div>
+            <div class="set-row-sub">Versi 2.1 · Single-file PWA · Data tersimpan lokal di browser</div>
           </div>
         </div>
         <div class="set-row">

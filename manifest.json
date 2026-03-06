@@ -1,7 +1,7 @@
 {
   "name": "Renovasi Tracker",
   "short_name": "Renovasi",
-  "description": "Dokumentasi kerusakan rumah & estimasi biaya renovasi",
+  "description": "Dokumentasi kerusakan rumah & estimasi biaya renovasi dengan bantuan AI",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -21,14 +21,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "form_factor": "narrow"
     }
   ]
 }

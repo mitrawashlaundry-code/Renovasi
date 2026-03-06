@@ -1,28 +1,22 @@
-// Renovasi Tracker — Service Worker v2.0
-const CACHE = 'renovasi-v2';
+// Service Worker — Renovasi Tracker v2.1
+const CACHE = 'renovasi-v2-1';
 const ASSETS = [
   './',
   './index.html',
-  './index-2.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
   'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap'
 ];
 
-// Install: cache semua asset penting
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(cache => {
-      // Cache satu per satu agar satu gagal tidak blok yang lain
-      return Promise.allSettled(
-        ASSETS.map(url => cache.add(url).catch(() => console.warn('Cache miss:', url)))
-      );
-    }).then(() => self.skipWaiting())
+    caches.open(CACHE).then(c =>
+      Promise.allSettled(ASSETS.map(u => c.add(u).catch(() => {})))
+    ).then(() => self.skipWaiting())
   );
 });
 
-// Activate: hapus cache lama
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -31,30 +25,20 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Fetch: cache-first untuk asset, network-first untuk lainnya
 self.addEventListener('fetch', e => {
-  // Skip non-GET dan chrome-extension
-  if(e.request.method !== 'GET') return;
-  if(e.request.url.startsWith('chrome-extension')) return;
-
+  if (e.request.method !== 'GET') return;
+  if (e.request.url.startsWith('chrome-extension')) return;
   e.respondWith(
     caches.match(e.request).then(cached => {
-      if(cached) return cached;
-
-      return fetch(e.request).then(response => {
-        // Hanya cache response yang valid
-        if(!response || response.status !== 200 || response.type === 'error') {
-          return response;
-        }
-        // Cache dinamis untuk font dan resource penting
-        const clone = response.clone();
-        caches.open(CACHE).then(cache => cache.put(e.request, clone));
-        return response;
+      if (cached) return cached;
+      return fetch(e.request).then(res => {
+        if (!res || res.status !== 200 || res.type === 'error') return res;
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return res;
       }).catch(() => {
-        // Offline fallback — kembalikan index.html
-        if(e.request.destination === 'document') {
-          return caches.match('./index-2.html') || caches.match('./index.html');
-        }
+        if (e.request.destination === 'document')
+          return caches.match('./') || caches.match('/');
       });
     })
   );
