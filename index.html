@@ -3,7 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1C1917">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Renovasi">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+
 <title>Renovasi Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1179,20 +1190,56 @@ function clearGlobal(){if(!confirm('Hapus hasil analisis global?'))return;S.glob
 // ══════════════════════════════════════
 function setSev(s){S.form.severity=s;render();}
 function setGrade(g){S.form.materialGrade=g;render();}
+// Compress foto sebelum disimpan — max 800px, quality 0.72
+function compressPhoto(file){
+  return new Promise(resolve=>{
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      const MAX=800;
+      let w=img.width,h=img.height;
+      if(w>MAX||h>MAX){
+        if(w>h){h=Math.round(h*MAX/w);w=MAX;}
+        else{w=Math.round(w*MAX/h);h=MAX;}
+      }
+      const c=document.createElement('canvas');
+      c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(c.toDataURL('image/jpeg',0.72));
+    };
+    img.onerror=()=>{
+      // fallback: pakai FileReader biasa
+      const r=new FileReader();
+      r.onload=ev=>resolve(ev.target.result);
+      r.readAsDataURL(file);
+    };
+    img.src=url;
+  });
+}
+
 function addPhoto(e){
-  Array.from(e.target.files).forEach(f=>{
-    const r=new FileReader();r.onload=ev=>{S.form.images.push(ev.target.result);render();};r.readAsDataURL(f);
-  });e.target.value='';
+  const files=Array.from(e.target.files);
+  e.target.value='';
+  // Tampilkan loading state
+  files.forEach(async f=>{
+    try{
+      const compressed=await compressPhoto(f);
+      S.form.images.push(compressed);
+      render();
+    }catch{
+      const r=new FileReader();
+      r.onload=ev=>{S.form.images.push(ev.target.result);render();};
+      r.readAsDataURL(f);
+    }
+  });
 }
 function rmPhoto(i){S.form.images.splice(i,1);render();}
 function cancelForm(){S.form=blank();S.editingId=null;go('list');}
 let _saving=false;
 function saveItem(){
-  // GUARD: block double-submit (user tapping button multiple times)
   if(_saving)return;
   _saving=true;
-
-  // Disable save button immediately to prevent visual confusion
   const btn=document.querySelector('.btn.bp2');
   if(btn){btn.disabled=true;btn.textContent='⏳ Menyimpan...';}
 
@@ -1212,19 +1259,28 @@ function saveItem(){
   S.form.materialGrade=S.form.materialGrade||'Menengah';
   S.form.notes=$('f-notes')?.value||S.form.notes;
 
-  if(S.editingId){
-    const idx=S.items.findIndex(i=>i.id===S.editingId);
-    if(idx>=0)S.items[idx]={...S.items[idx],...S.form,updatedAt:new Date().toISOString()};
-    toast('✅ Item diperbarui');
-  } else {
-    S.items.push({...S.form,id:uid(),createdAt:new Date().toISOString()});
-    toast('✅ Ditambahkan!');
-  }
-  saveItems();
-  S.form=blank();S.editingId=null;
-  // Reset guard AFTER navigation is triggered
-  setTimeout(()=>{_saving=false;},500);
-  go('list');
+  // Simpan di next tick agar UI sempat update dulu
+  setTimeout(()=>{
+    try{
+      if(S.editingId){
+        const idx=S.items.findIndex(i=>i.id===S.editingId);
+        if(idx>=0)S.items[idx]={...S.items[idx],...S.form,updatedAt:new Date().toISOString()};
+        toast('✅ Item diperbarui');
+      } else {
+        S.items.push({...S.form,id:uid(),createdAt:new Date().toISOString()});
+        toast('✅ Ditambahkan!');
+      }
+      saveItems();
+      S.form=blank();S.editingId=null;
+      setTimeout(()=>{_saving=false;},300);
+      go('list');
+    }catch(err){
+      console.error(err);
+      toast('❌ Gagal menyimpan, coba lagi',true);
+      _saving=false;
+      if(btn){btn.disabled=false;btn.textContent=S.editingId?'✅ Simpan Perubahan':'➕ Tambah Kerusakan';}
+    }
+  },30);
 }
 function startEdit(id){const it=S.items.find(i=>i.id===id);if(!it)return;S.editingId=id;S.form={...it};go('add');}
 function delItem(id){S.items=S.items.filter(i=>i.id!==id);saveItems();toast('🗑️ Dihapus');go('list');}
@@ -1423,6 +1479,17 @@ function toast(msg,isErr,type){
 }
 
 render();
+
+// ══════════════════════════════════════
+// PWA — Service Worker Registration
+// ══════════════════════════════════════
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js')
+      .then(r=>console.log('SW registered, scope:',r.scope))
+      .catch(e=>console.warn('SW failed:',e));
+  });
+}
 </script>
 </body>
 </html>
