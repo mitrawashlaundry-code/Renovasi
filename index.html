@@ -564,13 +564,8 @@ function vList(){
   }).join('');
 
   const exclNote=exclCount>0?`<div style="font-size:11px;color:var(--ink3);text-align:center;margin:4px 0 12px;background:var(--surf2);border-radius:var(--rs);padding:6px 12px">⊘ ${exclCount} item dikecualikan dari estimasi AI</div>`:'';
-  const dangerZone=`<div class="danger-zone">
-    <div class="dz-title">⚠️ Zona Berbahaya</div>
-    <button class="dz-btn" onclick="resetAllAI()">🔄 Reset Semua Estimasi AI</button>
-    <button class="dz-btn" onclick="resetAllData()">🗑️ Hapus Semua Data</button>
-  </div>`;
 
-  return`<div class="content">${stats}<div style="font-size:12px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Daftar Kerusakan</div>${exclNote}${cards}${dangerZone}</div>`;
+  return`<div class="content">${stats}<div style="font-size:12px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Daftar Kerusakan</div>${exclNote}${cards}</div>`;
 }
 
 // ══════════════════════════════════════
@@ -996,11 +991,7 @@ function vReport(){
       <div style="font-size:12px;color:var(--ink2);margin-bottom:10px;line-height:1.5">Lengkap dengan estimasi AI. Buka di browser → Print → <strong>Save as PDF</strong> untuk simpan sebagai PDF.</div>
       <button class="btn bp2" onclick="dlReport('owner')">📥 Download Laporan Pemilik</button>
     </div>
-    <div style="background:var(--pur-l);border:1px solid #DDD6FE;border-radius:var(--r);padding:14px 16px;margin-bottom:12px">
-      <div style="font-size:13px;font-weight:700;color:var(--pur);margin-bottom:4px">📝 Laporan Pemilik (.rtf / Word)</div>
-      <div style="font-size:12px;color:var(--ink2);margin-bottom:10px;line-height:1.5">Format RTF — bisa dibuka & diedit di Microsoft Word atau Google Docs.</div>
-      <button class="btn bpu" onclick="dlDocx()">📄 Download .rtf (Word)</button>
-    </div>
+
     <div style="background:var(--grn-l);border:1px solid #86EFAC;border-radius:var(--r);padding:14px 16px;margin-bottom:12px">
       <div style="font-size:13px;font-weight:700;color:var(--grn);margin-bottom:4px">🔨 Instruksi untuk Tukang</div>
       <div style="font-size:12px;color:var(--ink2);margin-bottom:10px;line-height:1.5">Foto + deskripsi + catatan. Tanpa harga. Buka → Print → Save as PDF untuk PDF.</div>
@@ -1777,69 +1768,6 @@ function mergeGroup(gi){
   render();
 }
 
-// ══════════════════════════════════════
-// DOWNLOAD .DOCX
-// ══════════════════════════════════════
-function dlDocx(){
-  if(!S.items.length){toast('⚠️ Belum ada data',true);return;}
-  const city=S.city||'—';
-  const date=new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
-
-  // Build plain-text content for docx (RTF-based, opens in Word)
-  const rtfEsc=s=>(s||'').replace(/\\/g,'\\\\').replace(/\{/g,'\\{').replace(/\}/g,'\\}').replace(/\n/g,'\\line ');
-
-  let body=`{\\rtf1\\ansi\\deff0
-{\\fonttbl{\\f0 Plus Jakarta Sans;}{\\f1 Calibri;}{\\f2 Courier New;}}
-{\\colortbl;\\red28\\green25\\blue23;\\red194\\green65\\blue12;\\red21\\green128\\blue61;\\red124\\green58\\blue237;}
-\\paperw12240\\paperh15840\\margl1440\\margr1440\\margt1440\\margb1440
-\\f1\\fs24\\cf1
-
-{\\pard\\qc\\sb400{\\f1\\fs36\\b\\cf2 LAPORAN RENOVASI}\\par}
-{\\pard\\qc{\\f1\\fs24\\cf1 ${rtfEsc(city)} · ${rtfEsc(date)}}\\par}
-{\\pard\\qc{\\f1\\fs20\\cf1 ${S.items.length} kerusakan · Estimasi AI: ${fmt(totalBudget())}}\\par}
-\\pard\\sb200\\brdrb\\brdrs\\brdrw10\\brdrsp20\\par
-
-`;
-
-  S.items.forEach((it,idx)=>{
-    const sevEmoji={Ringan:'🟢',Sedang:'🟡',Parah:'🔴'}[it.severity]||'⚪';
-    body+=`{\\pard\\sb300{\\f1\\fs26\\b\\cf2 #${idx+1} — ${rtfEsc(it.room)} · ${rtfEsc(it.category)}}\\par}
-{\\pard{\\f1\\fs22 ${sevEmoji} Tingkat: ${rtfEsc(it.severity)}}${it.size?` · {\\f1\\fs22 📐 ${rtfEsc(it.size)}}`:''}\\par}
-{\\pard\\sb100{\\f1\\fs22 ${rtfEsc(it.description)}}\\par}
-`;
-    if(it.notes){
-      body+=`{\\pard\\sb60{\\f1\\fs20\\cf1\\i 📝 Catatan: ${rtfEsc(it.notes)}}\\par}\n`;
-    }
-    if(it.estimasi?.grand_total){
-      body+=`{\\pard\\sb60{\\f1\\fs22\\b\\cf3 💰 Estimasi AI: ${fmt(it.estimasi.grand_total)}}\\par}\n`;
-    }
-    if(it.estimasi?.raw_text){
-      // Strip markdown for RTF
-      const plain=it.estimasi.raw_text
-        .replace(/\|[^\n]+\|/g,'[lihat tabel di laporan HTML]')
-        .replace(/#{1,3}\s?/g,'').replace(/\*\*/g,'').replace(/\*/g,'').replace(/---/g,'—');
-      body+=`{\\pard\\sb40\\li360{\\f1\\fs20\\cf1 ${rtfEsc(plain.slice(0,800))}${plain.length>800?'...':''}}\\par}\n`;
-    }
-    body+=`{\\pard\\sb60\\brdrb\\brdrs\\brdrw5\\cf1\\par}\n`;
-  });
-
-  if(S.globalAI?.raw_text){
-    body+=`{\\pard\\sb400{\\f1\\fs26\\b\\cf2 📊 ANALISIS GLOBAL AI}\\par}
-{\\pard\\sb100{\\f1\\fs20\\cf1 ${rtfEsc(S.globalAI.raw_text.replace(/#{1,3}\s?/g,'').replace(/\*\*/g,'').replace(/\*/g,'').slice(0,2000))}}\\par}
-`;
-  }
-
-  body+=`{\\pard\\sb400\\qc{\\f1\\fs18\\cf1 Dibuat dengan Renovasi Tracker · ${rtfEsc(city)} · ${rtfEsc(date)}}\\par}
-}`;
-
-  const blob=new Blob([body],{type:'application/rtf'});
-  const a=Object.assign(document.createElement('a'),{
-    href:URL.createObjectURL(blob),
-    download:`laporan-renovasi-${new Date().toISOString().slice(0,10)}.rtf`
-  });
-  a.click();URL.revokeObjectURL(a.href);
-  toast('📄 File .rtf diunduh — buka dengan Word atau Google Docs');
-}
 
 // ══════════════════════════════════════
 // INIT — dipanggil setelah semua fungsi terdefinisi
