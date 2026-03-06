@@ -233,6 +233,37 @@ overscroll-behavior-y:contain}
 .dz-btn{width:100%;padding:11px;border-radius:var(--rs);border:1.5px solid var(--red);background:none;color:var(--red);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;touch-action:manipulation}
 .dz-btn:active{background:#FEE2E2}.dz-btn+.dz-btn{margin-top:8px}
 
+/* SETTINGS PAGE */
+.set-section{margin-bottom:20px}
+.set-label{font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;padding:0 2px}
+.set-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+.set-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--bdr);min-height:54px}
+.set-row:last-child{border-bottom:none}
+.set-row-icon{font-size:22px;flex-shrink:0;width:28px;text-align:center}
+.set-row-body{flex:1;min-width:0}
+.set-row-label{font-size:14px;font-weight:600}
+.set-row-sub{font-size:12px;color:var(--ink2);margin-top:2px;line-height:1.4}
+.set-row-action{flex-shrink:0;margin-left:8px}
+.set-btn{padding:8px 14px;border-radius:var(--rs);border:1.5px solid var(--bdr);background:var(--surf2);color:var(--ink);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;min-height:38px;touch-action:manipulation;white-space:nowrap}
+.set-btn.acc{border-color:var(--acc);background:var(--acc);color:#fff}
+.set-btn.grn{border-color:var(--grn);background:var(--grn);color:#fff}
+.set-btn.pur{border-color:var(--pur);background:var(--pur);color:#fff}
+.set-btn.red{border-color:var(--red);background:none;color:var(--red)}
+
+/* PWA INSTALL BANNER */
+.install-banner{background:linear-gradient(135deg,#1C1917 0%,#44200C 100%);border-radius:var(--r);padding:16px 18px;display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.install-banner-icon{font-size:34px;flex-shrink:0}
+.install-banner-body{flex:1;min-width:0}
+.install-banner-title{font-size:15px;font-weight:800;color:#fff;margin-bottom:3px}
+.install-banner-sub{font-size:12px;color:rgba(255,255,255,.6);line-height:1.4}
+.install-banner-btn{background:var(--acc);color:#fff;border:none;border-radius:var(--rs);padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;min-height:44px;touch-action:manipulation;flex-shrink:0}
+
+/* MERGE DUPLICATES */
+.merge-row{display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--surf2);border-radius:var(--rs);margin-bottom:8px}
+.merge-row input[type=checkbox]{width:20px;height:20px;accent-color:var(--pur);flex-shrink:0;margin-top:2px;cursor:pointer}
+.merge-row-title{font-size:13px;font-weight:600}
+.merge-row-sub{font-size:11px;color:var(--ink2);margin-top:2px}
+
 /* TABS */
 .tabs{display:flex;background:var(--surf2);border-radius:var(--rs);padding:3px;margin-bottom:16px}
 .tab{flex:1;padding:8px;border:none;background:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink2);transition:all .2s}
@@ -272,9 +303,10 @@ overscroll-behavior-y:contain}
     <input class="city-input" id="city-inp" value="" placeholder="Bandung, Jakarta, Surabaya..." oninput="S.city=this.value;saveCity()" onfocus="this.select()">
   </div>
   <nav class="bnav">
-    <button class="nb on" id="n-list"   onclick="go('list')">  <span class="ni">🏠</span><span class="nl">Kerusakan</span><div class="nd"></div></button>
-    <button class="nb"    id="n-ai"     onclick="go('ai')">    <span class="ni">🤖</span><span class="nl">AI Estimasi</span><div class="nd"></div></button>
-    <button class="nb"    id="n-report" onclick="go('report')"><span class="ni">📄</span><span class="nl">Laporan</span><div class="nd"></div></button>
+    <button class="nb on" id="n-list"     onclick="go('list')">    <span class="ni">🏠</span><span class="nl">Kerusakan</span><div class="nd"></div></button>
+    <button class="nb"    id="n-ai"       onclick="go('ai')">      <span class="ni">🤖</span><span class="nl">AI Estimasi</span><div class="nd"></div></button>
+    <button class="nb"    id="n-report"   onclick="go('report')">  <span class="ni">📄</span><span class="nl">Laporan</span><div class="nd"></div></button>
+    <button class="nb"    id="n-settings" onclick="go('settings')"><span class="ni">⚙️</span><span class="nl">Setelan</span><div class="nd"></div></button>
   </nav>
   <button class="fab" id="fab" onclick="go('add')">+</button>
 </div>
@@ -430,6 +462,11 @@ function saveItems(){save('rv3_items',S.items)}
 function saveCity(){save('rv3_city',S.city)}
 function totalBudget(){return S.items.filter(i=>i.includeInAI!==false).reduce((s,i)=>s+(i.estimasi?.grand_total||0),0)}
 
+// PWA Install prompt
+let _installPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();_installPrompt=e;render();});
+window.addEventListener('appinstalled',()=>{_installPrompt=null;toast('✅ Aplikasi berhasil diinstall!');render();});
+
 const AI_APPS=[
   {name:'Gemini',sub:'Google',icon:'✨',free:'Gratis',url:'https://gemini.google.com'},
   {name:'ChatGPT',sub:'OpenAI',icon:'💬',free:'Gratis*',url:'https://chat.openai.com'},
@@ -448,24 +485,21 @@ function go(v,id){
 
 function render(){
   topbarUI();navUI();
-  const vs={list:vList,add:vForm,detail:vDetail,ai:vAI,report:vReport};
+  const vs={list:vList,add:vForm,detail:vDetail,ai:vAI,report:vReport,settings:vSettings};
   $('main').innerHTML=(vs[S.view]||vList)();
   $('fab').style.display=S.view==='list'?'flex':'none';
-  // Citybar: show on list/ai/report, hide on add/detail
   const cb=$('citybar');
   if(cb){
-    cb.style.display=['add','detail'].includes(S.view)?'none':'flex';
+    cb.style.display=['add','detail','settings'].includes(S.view)?'none':'flex';
     const ci=$('city-inp');
     if(ci&&ci!==document.activeElement)ci.value=S.city||'';
   }
 }
 
 function topbarUI(){
-  const T={list:'Renovasi Tracker',add:S.editingId?'Edit Kerusakan':'Tambah Kerusakan',detail:'Detail Kerusakan',ai:'AI Estimasi',report:'Buat Laporan'};
+  const T={list:'Renovasi Tracker',add:S.editingId?'Edit Kerusakan':'Tambah Kerusakan',detail:'Detail Kerusakan',ai:'AI Estimasi',report:'Buat Laporan',settings:'Setelan'};
   $('tbt').textContent=T[S.view]||'';
   $('tbs').textContent=S.view==='list'?`${S.items.length} titik kerusakan`:'';
-  // FIX BUG: Remove existing back button first (was using ?.remove() which silently
-  // fails if null, but also re-creates on every render causing flicker)
   const existing = $('tb-back');
   if(existing) existing.remove();
   $('tba').style.display='none';
@@ -483,9 +517,8 @@ function topbarUI(){
 }
 
 function navUI(){
-  // FIX BUG: When on 'add' or 'detail' view, no nav tab should appear active except the underlying list view
   const activeNav = (S.view === 'add' || S.view === 'detail') ? 'list' : S.view;
-  ['list','ai','report'].forEach(v=>{const b=$('n-'+v);b.classList.toggle('on',activeNav===v)});
+  ['list','ai','report','settings'].forEach(v=>{const b=$('n-'+v);if(b)b.classList.toggle('on',activeNav===v)});
 }
 
 // ══════════════════════════════════════
@@ -610,7 +643,8 @@ function showNotesTooltip(){
 function vForm(){
   rebuildDropLists();
   const f=S.form;
-  const sevs=['Ringan','Sedang','Parah'].map(s=>`<button type="button" class="sb ${f.severity===s?'a'+s[0].toLowerCase():''}${f.severity===s&&s==='Ringan'?' ar':f.severity===s&&s==='Sedang'?' as':f.severity===s&&s==='Parah'?' ap':''}" onclick="setSev('${s}')">${s}</button>`).join('');
+  const sevClass={Ringan:'ar',Sedang:'as',Parah:'ap'};
+  const sevs=['Ringan','Sedang','Parah'].map(s=>`<button type="button" class="sb ${f.severity===s?sevClass[s]:''}" onclick="setSev('${s}')">${s}</button>`).join('');
   const photos=f.images.map((src,i)=>`<div class="pw"><img src="${src}" class="pt"/><button class="pd" onclick="rmPhoto(${i})">×</button></div>`).join('');
 
   return`<div class="content">
@@ -945,28 +979,43 @@ function vReport(){
   const we=S.items.filter(i=>i.estimasi&&i.includeInAI!==false).length;
   const exclCount=S.items.filter(i=>i.includeInAI===false).length;
   return`<div class="content">
-    <div style="text-align:center;margin-bottom:20px"><div style="font-size:48px;margin-bottom:8px">📄</div>
-    <div style="font-size:18px;font-weight:700">Export Laporan</div>
-    <div style="font-size:13px;color:var(--ink2);margin-top:4px">📍 ${S.city||'Kota belum diisi'}</div></div>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:48px;margin-bottom:8px">📄</div>
+      <div style="font-size:18px;font-weight:700">Export Laporan</div>
+      <div style="font-size:13px;color:var(--ink2);margin-top:4px">📍 ${S.city||'Kota belum diisi'}</div>
+    </div>
     <div class="ic" style="margin-bottom:16px">
       <div class="rrow"><span style="color:var(--ink2)">Total Kerusakan</span><span style="font-weight:700">${S.items.length} item</span></div>
-      ${exclCount?`<div class="rrow"><span style="color:var(--ink2)">Skip AI (kecil)</span><span style="font-weight:700;color:var(--ink3)">${exclCount} item</span></div>`:''}
+      ${exclCount?`<div class="rrow"><span style="color:var(--ink2)">Skip AI</span><span style="font-weight:700;color:var(--ink3)">${exclCount} item</span></div>`:''}
       <div class="rrow"><span style="color:var(--ink2)">Sudah Estimasi AI</span><span style="font-weight:700">${we} item</span></div>
       <div class="rrow"><span style="color:var(--ink2)">Total Budget AI</span><span style="font-weight:700;color:var(--acc)">${fmt(totalBudget())}</span></div>
     </div>
     ${S.items.length?`
     <div style="background:var(--acc-l);border:1px solid #FDBA74;border-radius:var(--r);padding:14px 16px;margin-bottom:12px">
-      <div style="font-size:13px;font-weight:700;color:var(--acc);margin-bottom:4px">📊 Laporan Pemilik</div>
-      <div style="font-size:12px;color:var(--ink2);margin-bottom:10px;line-height:1.5">Lengkap dengan estimasi AI dan breakdown biaya. Untuk arsip pribadi dan perbandingan dengan penawaran tukang.</div>
+      <div style="font-size:13px;font-weight:700;color:var(--acc);margin-bottom:4px">📊 Laporan Pemilik (HTML)</div>
+      <div style="font-size:12px;color:var(--ink2);margin-bottom:10px;line-height:1.5">Lengkap dengan estimasi AI. Buka di browser → Print → <strong>Save as PDF</strong> untuk simpan sebagai PDF.</div>
       <button class="btn bp2" onclick="dlReport('owner')">📥 Download Laporan Pemilik</button>
+    </div>
+    <div style="background:var(--pur-l);border:1px solid #DDD6FE;border-radius:var(--r);padding:14px 16px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700;color:var(--pur);margin-bottom:4px">📝 Laporan Pemilik (.rtf / Word)</div>
+      <div style="font-size:12px;color:var(--ink2);margin-bottom:10px;line-height:1.5">Format RTF — bisa dibuka & diedit di Microsoft Word atau Google Docs.</div>
+      <button class="btn bpu" onclick="dlDocx()">📄 Download .rtf (Word)</button>
     </div>
     <div style="background:var(--grn-l);border:1px solid #86EFAC;border-radius:var(--r);padding:14px 16px;margin-bottom:12px">
       <div style="font-size:13px;font-weight:700;color:var(--grn);margin-bottom:4px">🔨 Instruksi untuk Tukang</div>
-      <div style="font-size:12px;color:var(--ink2);margin-bottom:10px;line-height:1.5">Daftar pekerjaan, foto kerusakan, catatan khusus, dan info penting. <strong>Tanpa harga estimasi</strong> — bersih dan mudah dibaca tukang.</div>
+      <div style="font-size:12px;color:var(--ink2);margin-bottom:10px;line-height:1.5">Foto + deskripsi + catatan. Tanpa harga. Buka → Print → Save as PDF untuk PDF.</div>
       <button class="btn bgrn" onclick="dlReport('worker')">📤 Download untuk Tukang</button>
     </div>
+    <div style="background:#F0F9FF;border:1px solid #BAE6FD;border-radius:var(--r);padding:14px 16px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700;color:#0369A1;margin-bottom:4px">💾 Backup & Pindah HP</div>
+      <div style="font-size:12px;color:var(--ink2);margin-bottom:10px;line-height:1.5">Export semua data ke file JSON — import di HP lain untuk lanjutkan dari tempat yang sama.</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" style="flex:1;border-color:#0369A1;color:#0369A1;background:none" onclick="exportJSON()">📤 Export Data</button>
+        <button class="btn" style="flex:1;border-color:#0369A1;color:#0369A1;background:none" onclick="importJSON()">📥 Import Data</button>
+      </div>
+    </div>
     `:`<div style="text-align:center;color:var(--ink3);padding:16px">Belum ada data</div>`}
-    <div class="tipbox">💡 <strong>Alur:</strong> Kirim ke Tukang → minta penawaran harga → bandingkan dengan Laporan Pemilik → nilai kewajaran harga.</div>
+    <div class="tipbox">💡 <strong>Cara ke PDF:</strong> Download laporan HTML → buka di browser → ketuk ⋮ menu → <strong>Print / Cetak</strong> → pilih <strong>"Save as PDF"</strong></div>
   </div>`;
 }
 
@@ -1478,16 +1527,379 @@ function toast(msg,isErr,type){
   setTimeout(()=>el.remove(),3000);
 }
 
+// ══════════════════════════════════════
+// VIEW: SETTINGS
+// ══════════════════════════════════════
+function vSettings(){
+  const dupGroups=findDuplicates();
+  const isInstalled=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;
+
+  const installBlock=isInstalled
+    ?`<div style="background:var(--grn-l);border:1px solid #86EFAC;border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:20px">
+        <span style="font-size:28px">✅</span>
+        <div><div style="font-weight:700;color:var(--grn);font-size:14px">Aplikasi Sudah Terinstall</div>
+        <div style="font-size:12px;color:var(--ink2);margin-top:2px">Renovasi Tracker berjalan sebagai app</div></div>
+      </div>`
+    :_installPrompt
+      ?`<div class="install-banner">
+          <div class="install-banner-icon">📲</div>
+          <div class="install-banner-body">
+            <div class="install-banner-title">Install ke Homescreen</div>
+            <div class="install-banner-sub">Akses seperti app sungguhan — ikon di homescreen, bisa offline</div>
+          </div>
+          <button class="install-banner-btn" onclick="triggerInstall()">Install</button>
+        </div>`
+      :`<div style="background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;margin-bottom:20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:6px">📲 Install ke Homescreen</div>
+          <div style="font-size:12px;color:var(--ink2);line-height:1.6;margin-bottom:10px">
+            <strong>Android:</strong> Tap ⋮ menu browser → "Tambahkan ke layar utama"<br>
+            <strong>iPhone:</strong> Tap tombol Share ↑ di Safari → "Tambahkan ke Layar Utama"
+          </div>
+          <div style="font-size:11px;color:var(--ink3);font-style:italic">Banner install otomatis muncul setelah beberapa kunjungan</div>
+        </div>`;
+
+  const dupBlock=dupGroups.length
+    ?`<div class="set-section">
+        <div class="set-label">⚠️ ${dupGroups.length} Kelompok Duplikat Ditemukan</div>
+        <div class="set-card">
+          ${dupGroups.map((g,gi)=>`
+          <div style="padding:14px 16px;border-bottom:1px solid var(--bdr)">
+            <div style="font-size:12px;font-weight:700;color:var(--amb);margin-bottom:8px">Kelompok ${gi+1} — ${g.length} item serupa</div>
+            ${g.map(it=>`<div class="merge-row">
+              <input type="checkbox" id="mg-${it.id}" checked onchange="">
+              <div class="merge-row-body">
+                <div class="merge-row-title">${it.room} — ${it.category}</div>
+                <div class="merge-row-sub">${it.severity} · ${it.description.slice(0,60)}${it.description.length>60?'…':''}</div>
+              </div>
+            </div>`).join('')}
+            <button class="btn bpu" style="width:100%;margin-top:8px" onclick="mergeGroup(${gi})">🔗 Gabungkan Kelompok Ini</button>
+          </div>`).join('')}
+        </div>
+      </div>`
+    :``;
+
+  return`<div class="content">
+    ${installBlock}
+
+    <div class="set-section">
+      <div class="set-label">🏙️ Lokasi Proyek</div>
+      <div class="set-card">
+        <div class="set-row">
+          <div class="set-row-icon">📍</div>
+          <div class="set-row-body">
+            <div class="set-row-label">Kota Renovasi</div>
+            <input style="width:100%;margin-top:6px;border:1.5px solid var(--bdr);border-radius:var(--rs);padding:8px 10px;font-size:16px;font-family:inherit;background:var(--surf2);color:var(--ink);outline:none" 
+              placeholder="Bandung, Jakarta, Surabaya..." 
+              value="${esc(S.city||'')}"
+              oninput="S.city=this.value;saveCity()"
+              onfocus="this.select()">
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px">Dipakai di semua prompt AI</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="set-section">
+      <div class="set-label">💾 Backup & Transfer Data</div>
+      <div class="set-card">
+        <div class="set-row">
+          <div class="set-row-icon">📤</div>
+          <div class="set-row-body">
+            <div class="set-row-label">Export Data</div>
+            <div class="set-row-sub">Simpan semua kerusakan + estimasi AI ke file JSON. Bisa diimport di HP lain.</div>
+          </div>
+          <div class="set-row-action"><button class="set-btn grn" onclick="exportJSON()">Export</button></div>
+        </div>
+        <div class="set-row">
+          <div class="set-row-icon">📥</div>
+          <div class="set-row-body">
+            <div class="set-row-label">Import Data</div>
+            <div class="set-row-sub">Muat data dari file JSON. Data yang ada akan <strong>digabungkan</strong> (tidak terhapus).</div>
+          </div>
+          <div class="set-row-action"><button class="set-btn pur" onclick="importJSON()">Import</button></div>
+        </div>
+      </div>
+    </div>
+
+    ${dupGroups.length?`<div class="set-section">
+      <div class="set-label">🔗 Gabungkan Duplikat</div>
+      ${dupGroups.map((g,gi)=>`
+      <div class="set-card" style="margin-bottom:10px">
+        <div style="padding:12px 16px;background:var(--amb-l);border-bottom:1px solid var(--bdr)">
+          <div style="font-size:12px;font-weight:700;color:var(--amb)">${g.length} item serupa ditemukan — ${g[0].room} · ${g[0].category}</div>
+        </div>
+        ${g.map(it=>`<div class="set-row" style="padding:10px 16px">
+          <div class="set-row-icon" style="font-size:14px">${{Ringan:'🟢',Sedang:'🟡',Parah:'🔴'}[it.severity]||'⚪'}</div>
+          <div class="set-row-body">
+            <div style="font-size:13px;font-weight:600">${it.severity}</div>
+            <div style="font-size:11px;color:var(--ink2)">${it.description.slice(0,70)}${it.description.length>70?'…':''}</div>
+          </div>
+        </div>`).join('')}
+        <div style="padding:10px 16px;border-top:1px solid var(--bdr)">
+          <button class="btn bpu" style="width:100%" onclick="mergeGroup(${gi})">🔗 Gabungkan — Simpan yang Terlengkap</button>
+        </div>
+      </div>`).join('')}
+    </div>`:''}
+
+    <div class="set-section">
+      <div class="set-label">ℹ️ Tentang Aplikasi</div>
+      <div class="set-card">
+        <div class="set-row">
+          <div class="set-row-icon">🏠</div>
+          <div class="set-row-body">
+            <div class="set-row-label">Renovasi Tracker</div>
+            <div class="set-row-sub">Versi 2.0 · Single-file PWA · Data tersimpan lokal di browser</div>
+          </div>
+        </div>
+        <div class="set-row">
+          <div class="set-row-icon">📊</div>
+          <div class="set-row-body">
+            <div class="set-row-label">Statistik Data</div>
+            <div class="set-row-sub">${S.items.length} kerusakan · ${S.items.filter(i=>i.estimasi).length} estimasi · ${S.items.reduce((s,i)=>s+i.images.length,0)} foto tersimpan</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="danger-zone">
+      <div class="dz-title">⚠️ Zona Berbahaya</div>
+      <button class="dz-btn" onclick="resetAllAI()">🔄 Reset Semua Estimasi AI</button>
+      <button class="dz-btn" onclick="resetAllData()" style="margin-top:8px">🗑️ Hapus Semua Data</button>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════
+// PWA INSTALL
+// ══════════════════════════════════════
+async function triggerInstall(){
+  if(!_installPrompt){toast('⚠️ Install prompt tidak tersedia',true);return;}
+  _installPrompt.prompt();
+  const {outcome}=await _installPrompt.userChoice;
+  if(outcome==='accepted'){_installPrompt=null;toast('✅ Sedang menginstall...');}
+  render();
+}
+
+// ══════════════════════════════════════
+// EXPORT / IMPORT JSON
+// ══════════════════════════════════════
+function exportJSON(){
+  if(!S.items.length){toast('⚠️ Belum ada data untuk diexport',true);return;}
+  const payload={
+    version:1,
+    exportedAt:new Date().toISOString(),
+    city:S.city,
+    items:S.items,
+    globalAI:S.globalAI
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=Object.assign(document.createElement('a'),{
+    href:URL.createObjectURL(blob),
+    download:`renovasi-backup-${new Date().toISOString().slice(0,10)}.json`
+  });
+  a.click();URL.revokeObjectURL(a.href);
+  toast(`📤 Export berhasil — ${S.items.length} item`);
+}
+
+function importJSON(){
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='.json,application/json';
+  inp.onchange=async e=>{
+    const f=e.target.files[0];if(!f)return;
+    try{
+      const text=await f.text();
+      const data=JSON.parse(text);
+      if(!data.items||!Array.isArray(data.items))throw new Error('Format tidak valid');
+      
+      // Merge — skip items with same ID, add new ones
+      const existingIds=new Set(S.items.map(i=>i.id));
+      const newItems=data.items.filter(i=>!existingIds.has(i.id));
+      const merged=S.items.length===0?data.items:[...S.items,...newItems];
+      
+      S.items=merged;
+      if(data.city&&!S.city)S.city=data.city;
+      if(data.globalAI&&!S.globalAI)S.globalAI=data.globalAI;
+      saveItems();saveCity();
+      if(data.globalAI)save('rv3_global',data.globalAI);
+      toast(`📥 Import berhasil — ${newItems.length} item baru ditambahkan`);
+      render();
+    }catch(err){
+      toast('❌ File tidak valid atau rusak',true);
+    }
+  };
+  inp.click();
+}
+
+// ══════════════════════════════════════
+// MERGE DUPLICATES
+// ══════════════════════════════════════
+function findDuplicates(){
+  const groups=[];
+  const used=new Set();
+  S.items.forEach((a,i)=>{
+    if(used.has(a.id))return;
+    const grp=[a];
+    S.items.forEach((b,j)=>{
+      if(i===j||used.has(b.id))return;
+      // Same room + category = potential duplicate
+      const sameRC=a.room.trim().toLowerCase()===b.room.trim().toLowerCase()&&
+                   a.category.trim().toLowerCase()===b.category.trim().toLowerCase();
+      // Or very similar description (first 30 chars match)
+      const simDesc=a.description.trim().slice(0,30).toLowerCase()===
+                    b.description.trim().slice(0,30).toLowerCase()&&a.description.length>5;
+      if(sameRC||simDesc){grp.push(b);used.add(b.id);}
+    });
+    if(grp.length>1){used.add(a.id);groups.push(grp);}
+  });
+  return groups;
+}
+
+function mergeGroup(gi){
+  const groups=findDuplicates();
+  const grp=groups[gi];if(!grp||grp.length<2)return;
+  // Keep item with most data: most images, longest description, has estimasi
+  const best=grp.reduce((prev,cur)=>{
+    let ps=(prev.images?.length||0)*3+(prev.description?.length||0)+(prev.estimasi?100:0);
+    let cs=(cur.images?.length||0)*3+(cur.description?.length||0)+(cur.estimasi?100:0);
+    return cs>ps?cur:prev;
+  });
+  // Merge images from all, deduplicate by first 100 chars
+  const allImgs=[...new Map(grp.flatMap(i=>i.images||[]).map(img=>[img.slice(0,100),img])).values()];
+  // Merge notes
+  const allNotes=[...new Set(grp.map(i=>i.notes).filter(Boolean))].join(' | ');
+  const merged={...best,images:allImgs,notes:allNotes||best.notes};
+  // Remove all in group, add merged
+  const removeIds=new Set(grp.map(i=>i.id));
+  S.items=S.items.filter(i=>!removeIds.has(i.id));
+  S.items.push(merged);
+  saveItems();
+  toast(`🔗 ${grp.length} item digabungkan menjadi 1`);
+  render();
+}
+
+// ══════════════════════════════════════
+// DOWNLOAD .DOCX
+// ══════════════════════════════════════
+function dlDocx(){
+  if(!S.items.length){toast('⚠️ Belum ada data',true);return;}
+  const city=S.city||'—';
+  const date=new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+
+  // Build plain-text content for docx (RTF-based, opens in Word)
+  const rtfEsc=s=>(s||'').replace(/\\/g,'\\\\').replace(/\{/g,'\\{').replace(/\}/g,'\\}').replace(/\n/g,'\\line ');
+
+  let body=`{\\rtf1\\ansi\\deff0
+{\\fonttbl{\\f0 Plus Jakarta Sans;}{\\f1 Calibri;}{\\f2 Courier New;}}
+{\\colortbl;\\red28\\green25\\blue23;\\red194\\green65\\blue12;\\red21\\green128\\blue61;\\red124\\green58\\blue237;}
+\\paperw12240\\paperh15840\\margl1440\\margr1440\\margt1440\\margb1440
+\\f1\\fs24\\cf1
+
+{\\pard\\qc\\sb400{\\f1\\fs36\\b\\cf2 LAPORAN RENOVASI}\\par}
+{\\pard\\qc{\\f1\\fs24\\cf1 ${rtfEsc(city)} · ${rtfEsc(date)}}\\par}
+{\\pard\\qc{\\f1\\fs20\\cf1 ${S.items.length} kerusakan · Estimasi AI: ${fmt(totalBudget())}}\\par}
+\\pard\\sb200\\brdrb\\brdrs\\brdrw10\\brdrsp20\\par
+
+`;
+
+  S.items.forEach((it,idx)=>{
+    const sevEmoji={Ringan:'🟢',Sedang:'🟡',Parah:'🔴'}[it.severity]||'⚪';
+    body+=`{\\pard\\sb300{\\f1\\fs26\\b\\cf2 #${idx+1} — ${rtfEsc(it.room)} · ${rtfEsc(it.category)}}\\par}
+{\\pard{\\f1\\fs22 ${sevEmoji} Tingkat: ${rtfEsc(it.severity)}}${it.size?` · {\\f1\\fs22 📐 ${rtfEsc(it.size)}}`:''}\\par}
+{\\pard\\sb100{\\f1\\fs22 ${rtfEsc(it.description)}}\\par}
+`;
+    if(it.notes){
+      body+=`{\\pard\\sb60{\\f1\\fs20\\cf1\\i 📝 Catatan: ${rtfEsc(it.notes)}}\\par}\n`;
+    }
+    if(it.estimasi?.grand_total){
+      body+=`{\\pard\\sb60{\\f1\\fs22\\b\\cf3 💰 Estimasi AI: ${fmt(it.estimasi.grand_total)}}\\par}\n`;
+    }
+    if(it.estimasi?.raw_text){
+      // Strip markdown for RTF
+      const plain=it.estimasi.raw_text
+        .replace(/\|[^\n]+\|/g,'[lihat tabel di laporan HTML]')
+        .replace(/#{1,3}\s?/g,'').replace(/\*\*/g,'').replace(/\*/g,'').replace(/---/g,'—');
+      body+=`{\\pard\\sb40\\li360{\\f1\\fs20\\cf1 ${rtfEsc(plain.slice(0,800))}${plain.length>800?'...':''}}\\par}\n`;
+    }
+    body+=`{\\pard\\sb60\\brdrb\\brdrs\\brdrw5\\cf1\\par}\n`;
+  });
+
+  if(S.globalAI?.raw_text){
+    body+=`{\\pard\\sb400{\\f1\\fs26\\b\\cf2 📊 ANALISIS GLOBAL AI}\\par}
+{\\pard\\sb100{\\f1\\fs20\\cf1 ${rtfEsc(S.globalAI.raw_text.replace(/#{1,3}\s?/g,'').replace(/\*\*/g,'').replace(/\*/g,'').slice(0,2000))}}\\par}
+`;
+  }
+
+  body+=`{\\pard\\sb400\\qc{\\f1\\fs18\\cf1 Dibuat dengan Renovasi Tracker · ${rtfEsc(city)} · ${rtfEsc(date)}}\\par}
+}`;
+
+  const blob=new Blob([body],{type:'application/rtf'});
+  const a=Object.assign(document.createElement('a'),{
+    href:URL.createObjectURL(blob),
+    download:`laporan-renovasi-${new Date().toISOString().slice(0,10)}.rtf`
+  });
+  a.click();URL.revokeObjectURL(a.href);
+  toast('📄 File .rtf diunduh — buka dengan Word atau Google Docs');
+}
+
+// ══════════════════════════════════════
+// INIT — dipanggil setelah semua fungsi terdefinisi
+// ══════════════════════════════════════
 render();
 
 // ══════════════════════════════════════
-// PWA — Service Worker Registration
+// PWA — Service Worker (inline Blob)
+// Menggunakan Blob URL agar bekerja tanpa file sw.js eksternal,
+// termasuk saat dijalankan dari Claude artifacts atau file:// lokal.
 // ══════════════════════════════════════
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw.js')
-      .then(r=>console.log('SW registered, scope:',r.scope))
-      .catch(e=>console.warn('SW failed:',e));
+    const swCode=`
+const CACHE='renovasi-v2';
+const ASSETS=['./','/'];
+self.addEventListener('install',e=>{
+  e.waitUntil(
+    caches.open(CACHE).then(c=>
+      Promise.allSettled(ASSETS.map(u=>c.add(u).catch(()=>{})))
+    ).then(()=>self.skipWaiting())
+  );
+});
+self.addEventListener('activate',e=>{
+  e.waitUntil(
+    caches.keys().then(keys=>
+      Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))
+    ).then(()=>self.clients.claim())
+  );
+});
+self.addEventListener('fetch',e=>{
+  if(e.request.method!=='GET')return;
+  if(e.request.url.startsWith('chrome-extension'))return;
+  e.respondWith(
+    caches.match(e.request).then(cached=>{
+      if(cached)return cached;
+      return fetch(e.request).then(res=>{
+        if(!res||res.status!==200||res.type==='error')return res;
+        const clone=res.clone();
+        caches.open(CACHE).then(c=>c.put(e.request,clone));
+        return res;
+      }).catch(()=>{
+        if(e.request.destination==='document')
+          return caches.match('./')||caches.match('/');
+      });
+    })
+  );
+});`;
+    try{
+      const blob=new Blob([swCode],{type:'application/javascript'});
+      const url=URL.createObjectURL(blob);
+      navigator.serviceWorker.register(url,{scope:'./'})
+        .then(r=>{console.log('SW registered (inline blob)');URL.revokeObjectURL(url);})
+        .catch(()=>{
+          // Fallback: coba file eksternal sw.js jika tersedia
+          navigator.serviceWorker.register('sw.js')
+            .then(r=>console.log('SW registered (sw.js)'))
+            .catch(e=>console.info('SW tidak tersedia di environment ini:',e.message));
+        });
+    }catch(e){console.info('SW skip:',e.message);}
   });
 }
 </script>

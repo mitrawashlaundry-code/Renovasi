@@ -1,8 +1,9 @@
-// Renovasi Tracker — Service Worker v1.0
-const CACHE = 'renovasi-v1';
+// Renovasi Tracker — Service Worker v2.0
+const CACHE = 'renovasi-v2';
 const ASSETS = [
   './',
   './index.html',
+  './index-2.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
@@ -52,7 +53,7 @@ self.addEventListener('fetch', e => {
       }).catch(() => {
         // Offline fallback — kembalikan index.html
         if(e.request.destination === 'document') {
-          return caches.match('./index.html');
+          return caches.match('./index-2.html') || caches.match('./index.html');
         }
       });
     })
